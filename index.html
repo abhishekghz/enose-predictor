@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>E-nose Predictor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <h1>E-nose Predictor</h1>
+        <p class="sub">Smell recognition</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-mode="file">Upload CSV</button>
+      <button class="tab" role="tab" data-mode="live">Live sensor</button>
+    </nav>
+    <div class="top-actions">
+      <span id="conn" class="pill"><span class="dot"></span><span id="conn-text">connecting…</span></span>
+      <span id="device" class="pill subtle">device —</span>
+    </div>
+  </header>
+
+  <section class="controls" id="file-controls" hidden>
+    <div class="control-row">
+      <label class="field"><span>Upload CSV</span>
+        <input id="file" type="file" accept=".csv,.txt,.log">
+      </label>
+      <label class="field"><span>Device</span>
+        <select id="dev"><option value="auto">auto</option><option value="1">1</option><option value="2">2</option></select>
+      </label>
+      <button id="stop" class="btn ghost" hidden>Stop</button>
+    </div>
+    <p id="file-note" class="note-line"></p>
+  </section>
+
+  <section class="controls" id="live-controls" hidden>
+    <div class="control-row">
+      <button id="connect" class="btn">Connect e-nose</button>
+      <button id="disconnect" class="btn ghost" hidden>Disconnect</button>
+      <label class="field"><span>Baud</span>
+        <select id="baud"><option>115200</option><option>9600</option></select>
+      </label>
+      <button id="save-folder" class="btn ghost" hidden>Choose save folder</button>
+      <button id="download-log" class="btn ghost" disabled>Download log</button>
+    </div>
+    <p class="note-line">Connect the e-nose's USB port, then press its start button.</p>
+    <p id="serial-unsupported" class="note-line err" hidden>Live needs Chrome or Edge.</p>
+  </section>
+
+  <main>
+    <section class="stage card">
+      <div class="card-head">
+        <h2>Sensor chamber</h2>
+        <span id="burst-label" class="muted">burst —</span>
+      </div>
+      <canvas id="chamber" aria-label="Animated sensor chamber"></canvas>
+      <ol class="steps" id="steps">
+        <li><span class="n">1</span>Fill chamber</li>
+        <li><span class="n">2</span>Measure &amp; predict</li>
+        <li><span class="n">3</span>Flush gas</li>
+        <li><span class="n">4</span>Ready</li>
+      </ol>
+      <div class="progress"><div id="progress-bar"></div></div>
+      <p id="phase-text" class="phase-text"></p>
+    </section>
+
+    <section class="model card" id="model-card">
+      <div class="card-head">
+        <h2 id="result-title">Prediction</h2>
+        <span id="model-status" class="badge">idle</span>
+      </div>
+      <div class="verdict">
+        <div class="photo-wrap">
+          <img id="photo" alt="" hidden>
+          <canvas id="brain" aria-hidden="true"></canvas>
+        </div>
+        <div class="verdict-text">
+          <div class="label">Category</div>
+          <div id="v-category" class="v-category">—</div>
+          <div class="label">Item</div>
+          <div id="v-item" class="v-item">—</div>
+          <div class="conf">
+            <svg viewBox="0 0 36 36" class="ring"><circle cx="18" cy="18" r="15.5" class="ring-bg"/><circle id="ring" cx="18" cy="18" r="15.5" class="ring-fg"/></svg>
+            <div>
+              <div id="v-conf" class="v-conf">—</div>
+              <div id="v-basis" class="muted small">no data yet</div>
+            </div>
+          </div>
+          <ol id="v-top3" class="top3" hidden></ol>
+          <div id="v-top3-note" class="muted small" hidden></div>
+          <div id="v-chamber" class="v-chamber small" hidden></div>
+          <div id="v-truth" class="v-truth" hidden></div>
+          <div id="done-box" class="done-box" hidden>
+            <div id="saved-line" class="saved-line small"></div>
+            <button id="clear" class="btn ghost">Clear</button>
+            <div id="label-box" class="label-box" hidden>
+              <label class="small" for="label-item">What was in the chamber?</label>
+              <div class="label-row">
+                <select id="label-item"></select>
+                <input id="label-other" type="text" placeholder="name of the sample" hidden>
+                <button id="label-save" class="btn">Save label</button>
+              </div>
+              <div id="label-msg" class="small muted"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bars-grid">
+        <div>
+          <h3>Item scores</h3>
+          <div id="item-bars" class="bars"></div>
+        </div>
+        <div>
+          <h3>Category scores</h3>
+          <div id="cat-bars" class="bars"></div>
+        </div>
+      </div>
+      <p id="window-ticker" class="ticker muted small"></p>
+    </section>
+
+    <section class="charts card">
+      <div class="card-head">
+        <h2>Sensor data</h2>
+        <span id="rows-label" class="muted">0 rows</span>
+      </div>
+      <div class="chart-grid" id="charts"></div>
+    </section>
+
+    <section class="history card">
+      <div class="card-head">
+        <h2>Bursts</h2>
+        <span id="score" class="muted small"></span>
+      </div>
+      <div id="bursts" class="burst-list"><p class="muted empty">No bursts yet.</p></div>
+      <div class="raw-head">
+        <h3 class="log-title" id="raw-title">Device lines</h3>
+        <span id="raw-rate" class="muted small">0 lines</span>
+      </div>
+      <div id="raw" class="log raw"></div>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
